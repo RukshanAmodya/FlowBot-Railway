@@ -48,7 +48,15 @@ class BrowserSessionManager:
         else:
             self._page = await self._context.new_page()
 
+        # Stealth script for Headless Cloud Chrome to avoid bot detection
+        await self._page.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+        """)
+
         return self._page
+
 
     async def check_authenticated(self) -> bool:
         """Verifies if Google Flow is actively authenticated."""
