@@ -81,4 +81,9 @@ class BrowserSessionManager:
             self._context = None
             self._playwright = None
 
+    async def close_context(self) -> None:
+        """Alias for close."""
+        await self.close()
+
 session_manager = BrowserSessionManager()
+
