@@ -24,9 +24,10 @@ class Settings(BaseSettings):
     BROWSER_PROFILE_DIR: str = "./browser_profile"
     HEADLESS: bool = True
     FLOW_DEBUG: bool = False
-    PROXY_SERVER: Optional[str] = None  # e.g., "http://p.webshare.io:80" or "socks5://1.2.3.4:1080"
-    PROXY_USERNAME: Optional[str] = None
-    PROXY_PASSWORD: Optional[str] = None
+    PROXY_SERVER: Optional[str] = "http://31.59.20.176:6754"
+    PROXY_USERNAME: Optional[str] = "pgyojheu"
+    PROXY_PASSWORD: Optional[str] = "i1z3l2l2mh56"
+
 
     GENERATION_TIMEOUT_SECONDS: int = 300
     DOWNLOAD_TIMEOUT_SECONDS: int = 120
