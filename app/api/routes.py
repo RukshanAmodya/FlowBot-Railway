@@ -15,10 +15,24 @@ from app.utils.logger import logger
 router = APIRouter(prefix="/api/v1", tags=["FlowBot-Railway"])
 generation_lock = asyncio.Lock()
 
+def get_static_logged_in_email() -> Optional[str]:
+    """Safely extracts logged in email from browser profile without launching browser."""
+    try:
+        import json
+        pref_file = settings.profile_path / "Default" / "Preferences"
+        if pref_file.exists():
+            data = json.loads(pref_file.read_text(encoding="utf-8", errors="ignore"))
+            accounts = data.get("account_info", [])
+            if accounts and isinstance(accounts, list):
+                return accounts[0].get("email")
+    except Exception:
+        pass
+    return None
+
 @router.get("/status", response_model=StatusResponse)
 async def get_status():
     """Checks authentication status and readiness."""
-    user_email = GoogleFlowAdapter.get_logged_in_email()
+    user_email = get_static_logged_in_email()
     auth_state = bool(user_email or (settings.profile_path / "Default").exists())
     return StatusResponse(
         status="running",
@@ -26,6 +40,7 @@ async def get_status():
         authenticated=auth_state,
         user_email=user_email
     )
+
 
 @router.post("/generate", response_model=GenerateResponse)
 async def generate_images(req: GenerateRequest):
@@ -113,9 +128,10 @@ async def upload_session(file: UploadFile = File(...)):
         temp_tar.unlink(missing_ok=True)
 
         
-        email = GoogleFlowAdapter.get_logged_in_email()
+        email = get_static_logged_in_email()
         logger.info(f"Google Flow Session unpacked successfully on Railway. User: {email}")
         return {"success": True, "message": "Google Session Synced successfully!", "user_email": email}
+
     except Exception as e:
         logger.error(f"Failed to unpack session: {e}")
         raise HTTPException(status_code=500, detail=str(e))
