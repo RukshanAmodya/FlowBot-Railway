@@ -68,5 +68,15 @@ class Settings(BaseSettings):
         p.mkdir(parents=True, exist_ok=True)
         return p
 
+    @property
+    def BASE_DIR(self) -> Path:
+        return Path(__file__).resolve().parent.parent
+
+    @property
+    def base_path(self) -> Path:
+        return Path(__file__).resolve().parent.parent
+
 
 settings = Settings()
+
+
