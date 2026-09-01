@@ -2,8 +2,10 @@
 import uuid
 import asyncio
 import shutil
+from typing import Optional, List, Dict
 from pathlib import Path
 from fastapi import APIRouter, HTTPException, UploadFile, File, BackgroundTasks
+
 from fastapi.responses import FileResponse, JSONResponse
 from app.config import settings
 from app.models import GenerateRequest, GenerateResponse, StatusResponse
