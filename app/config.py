@@ -32,11 +32,13 @@ class Settings(BaseSettings):
     API_KEY: str = ""
 
     # Storage Paths
+    BASE_DIR: str = "."
     OUTPUT_DIR: str = "./generated"
     TEMP_DIR: str = "./temp"
     SCREENSHOT_DIR: str = "./screenshots"
     LOG_DIR: str = "./logs"
     LOG_LEVEL: str = "INFO"
+
 
     @property
     def profile_path(self) -> Path:
