@@ -103,14 +103,15 @@ async def upload_session(file: UploadFile = File(...)):
             await session_manager.close()
         except Exception:
             pass
-        temp_tar = settings.BASE_DIR / "temp_session.tar.gz"
-
+        temp_tar = settings.temp_path / "temp_session.tar.gz"
+        settings.temp_path.mkdir(parents=True, exist_ok=True)
         with open(temp_tar, "wb") as f:
             shutil.copyfileobj(file.file, f)
             
         settings.profile_path.mkdir(parents=True, exist_ok=True)
         shutil.unpack_archive(str(temp_tar), str(settings.profile_path), "gztar")
         temp_tar.unlink(missing_ok=True)
+
         
         email = GoogleFlowAdapter.get_logged_in_email()
         logger.info(f"Google Flow Session unpacked successfully on Railway. User: {email}")
