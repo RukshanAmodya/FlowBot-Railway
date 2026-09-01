@@ -1,4 +1,4 @@
-﻿"""API routes for Railway FlowBot Server."""
+"""API routes for Railway FlowBot Server."""
 import uuid
 import asyncio
 import shutil
@@ -99,8 +99,12 @@ async def download_zip(generation_id: str):
 async def upload_session(file: UploadFile = File(...)):
     """Uploads and unpacks authenticated Google session tar.gz into Railway volume."""
     try:
-        await session_manager.close_context()
+        try:
+            await session_manager.close()
+        except Exception:
+            pass
         temp_tar = settings.BASE_DIR / "temp_session.tar.gz"
+
         with open(temp_tar, "wb") as f:
             shutil.copyfileobj(file.file, f)
             
