@@ -452,9 +452,21 @@ class GoogleFlowAdapter:
     async def click_generate(self) -> None:
         """Triggers the generation action (arrow button or Enter)."""
         logger.info("Locating Generate / Arrow button...")
+
+        # Dismiss "OK, got it" Cookie Banner if covering bottom prompt bar
+        try:
+            cookie_btn = self.page.locator("button:has-text('OK, got it'), button:has-text('Accept all')").first
+            if await cookie_btn.is_visible(timeout=800):
+                logger.info("Dismissing bottom cookie notice banner...")
+                await cookie_btn.click()
+                await self.page.wait_for_timeout(400)
+        except Exception:
+            pass
+
         gen_btn_selectors = [
             "button:has(i:has-text('arrow_forward'))",
             "button:has(i:has-text('send'))",
+            "button:has(svg)",
             "button:has-text('Create')",
             "button:has-text('Generate')",
             "[aria-label*='Create']",
@@ -476,6 +488,7 @@ class GoogleFlowAdapter:
         logger.info("Falling back to pressing Enter in the prompt editor...")
         await self.page.keyboard.press("Enter")
         await self.page.wait_for_timeout(1000)
+
 
 
 
