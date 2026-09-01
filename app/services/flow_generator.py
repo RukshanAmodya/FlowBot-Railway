@@ -188,6 +188,12 @@ class FlowGeneratorService:
             await self.capture_diagnostic_snapshot(f"error_{fae.error_code.lower()}")
             raise
         except Exception as e:
+            curr_url = "unknown"
+            try:
+                curr_url = self.page.url
+            except Exception:
+                pass
             await self.capture_diagnostic_snapshot("unexpected_error")
             logger.exception(f"Unexpected error during flow generation: {e}")
-            raise FlowAutomationException("UNKNOWN_FLOW_ERROR", f"An unexpected error occurred: {str(e)}")
+            raise FlowAutomationException("UNKNOWN_FLOW_ERROR", f"Step failed: {str(e)} (on page URL: {curr_url})")
+

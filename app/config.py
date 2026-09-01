@@ -22,8 +22,9 @@ class Settings(BaseSettings):
 
     # Browser Automation Settings
     BROWSER_PROFILE_DIR: str = "./browser_profile"
-    HEADLESS: bool = False
+    HEADLESS: bool = True
     FLOW_DEBUG: bool = False
+
     GENERATION_TIMEOUT_SECONDS: int = 300
     DOWNLOAD_TIMEOUT_SECONDS: int = 120
 
