@@ -23,6 +23,11 @@ class BrowserSessionManager:
         logger.info(f"Launching persistent Playwright browser context at {settings.profile_path}...")
         self._playwright = await async_playwright().start()
         
+        state_file = settings.base_path / "state.json"
+        storage_state_arg = str(state_file) if state_file.exists() else None
+        if storage_state_arg:
+            logger.info(f"Using cross-platform storage state from: {state_file}")
+
         self._context = await self._playwright.chromium.launch_persistent_context(
             user_data_dir=str(settings.profile_path),
             headless=settings.HEADLESS,
@@ -38,6 +43,19 @@ class BrowserSessionManager:
                 "--disable-setuid-sandbox"
             ]
         )
+
+        # Inject storage_state cookies & storage if state.json is uploaded
+        if state_file.exists():
+            try:
+                import json
+                state_data = json.loads(state_file.read_text(encoding="utf-8"))
+                cookies = state_data.get("cookies", [])
+                if cookies:
+                    await self._context.add_cookies(cookies)
+                    logger.info(f"Loaded {len(cookies)} decrypted cookies into browser context.")
+            except Exception as e:
+                logger.warning(f"Failed to inject storage state cookies: {e}")
+
 
 
 

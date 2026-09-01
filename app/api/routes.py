@@ -132,26 +132,36 @@ async def download_zip(generation_id: str):
 
 @router.post("/auth/upload-session")
 async def upload_session(file: UploadFile = File(...)):
-    """Uploads and unpacks authenticated Google session tar.gz into Railway volume."""
+    """Uploads and unpacks authenticated Google session (tar.gz or state.json) into Railway."""
     try:
         try:
             await session_manager.close()
         except Exception:
             pass
-        temp_tar = settings.temp_path / "temp_session.tar.gz"
-        settings.temp_path.mkdir(parents=True, exist_ok=True)
-        with open(temp_tar, "wb") as f:
-            shutil.copyfileobj(file.file, f)
-            
-        settings.profile_path.mkdir(parents=True, exist_ok=True)
-        shutil.unpack_archive(str(temp_tar), str(settings.profile_path), "gztar")
-        temp_tar.unlink(missing_ok=True)
 
-        
-        email = get_static_logged_in_email()
-        logger.info(f"Google Flow Session unpacked successfully on Railway. User: {email}")
-        return {"success": True, "message": "Google Session Synced successfully!", "user_email": email}
+        filename = file.filename or "session.tar.gz"
+        if filename.endswith(".json"):
+            # Direct cross-platform storage state JSON
+            target_json = settings.base_path / "state.json"
+            with open(target_json, "wb") as f:
+                shutil.copyfileobj(file.file, f)
+            logger.info(f"Cross-platform state.json saved to {target_json} ({target_json.stat().st_size} bytes)")
+            return {"success": True, "message": "Cross-platform state.json Synced successfully!"}
+        else:
+            temp_tar = settings.temp_path / "temp_session.tar.gz"
+            settings.temp_path.mkdir(parents=True, exist_ok=True)
+            with open(temp_tar, "wb") as f:
+                shutil.copyfileobj(file.file, f)
+                
+            settings.profile_path.mkdir(parents=True, exist_ok=True)
+            shutil.unpack_archive(str(temp_tar), str(settings.profile_path), "gztar")
+            temp_tar.unlink(missing_ok=True)
+            
+            email = get_static_logged_in_email()
+            logger.info(f"Google Flow Session unpacked successfully on Railway. User: {email}")
+            return {"success": True, "message": "Google Session Synced successfully!", "user_email": email}
 
     except Exception as e:
         logger.error(f"Failed to unpack session: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
