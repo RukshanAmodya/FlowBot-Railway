@@ -1,0 +1,10 @@
+﻿__pycache__/
+*.pyc
+browser_profile/
+generated/
+logs/
+screenshots/
+temp_session.tar.gz
+railway_session.tar.gz
+.env
+.pytest_cache/

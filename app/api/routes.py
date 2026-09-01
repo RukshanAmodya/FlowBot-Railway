@@ -1,0 +1,116 @@
+﻿"""API routes for Railway FlowBot Server."""
+import uuid
+import asyncio
+import shutil
+from pathlib import Path
+from fastapi import APIRouter, HTTPException, UploadFile, File, BackgroundTasks
+from fastapi.responses import FileResponse, JSONResponse
+from app.config import settings
+from app.models import GenerateRequest, GenerateResponse, StatusResponse
+from app.services.session_manager import session_manager
+from app.services.flow_generator import FlowGeneratorService
+from app.services.flow_adapter import GoogleFlowAdapter, FlowAutomationException
+from app.utils.logger import logger
+
+router = APIRouter(prefix="/api/v1", tags=["FlowBot-Railway"])
+generation_lock = asyncio.Lock()
+
+@router.get("/status", response_model=StatusResponse)
+async def get_status():
+    """Checks authentication status and readiness."""
+    user_email = GoogleFlowAdapter.get_logged_in_email()
+    auth_state = bool(user_email or (settings.profile_path / "Default").exists())
+    return StatusResponse(
+        status="running",
+        is_busy=generation_lock.locked(),
+        authenticated=auth_state,
+        user_email=user_email
+    )
+
+@router.post("/generate", response_model=GenerateResponse)
+async def generate_images(req: GenerateRequest):
+    """Executes single generation request on Railway."""
+    if generation_lock.locked():
+        raise HTTPException(
+            status_code=409,
+            detail={"success": False, "error": "GENERATION_IN_PROGRESS", "message": "Another generation is in progress."}
+        )
+
+    async with generation_lock:
+        gen_id = uuid.uuid4().hex[:12]
+        logger.info(f"Accepted generate request [{gen_id}]: prompt='{req.prompt}', count={req.count}, ratio={req.aspect_ratio}")
+        
+        try:
+            page = await session_manager.get_or_create_context()
+            generator = FlowGeneratorService(page)
+            
+            image_paths = await generator.execute_generation(
+                prompt=req.prompt,
+                generation_id=gen_id,
+                count=req.count,
+                aspect_ratio=req.aspect_ratio,
+                reference_image_base64=req.reference_image_base64,
+                reference_image_url=req.reference_image_url
+            )
+            
+            # Format image URLs
+            image_urls = [f"/generated/{gen_id}/{p.name}" for p in image_paths]
+            
+            return GenerateResponse(
+                success=True,
+                generation_id=gen_id,
+                prompt=req.prompt,
+                count=len(image_paths),
+                images=image_urls,
+                zip_download_url=f"/api/v1/download/{gen_id}.zip"
+            )
+            
+        except FlowAutomationException as fae:
+            logger.error(f"FlowAutomationException in generation [{gen_id}]: {fae.error_code} - {fae.message}")
+            raise HTTPException(
+                status_code=500,
+                detail={"success": False, "error": fae.error_code, "message": fae.message, "details": fae.details}
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error in generation [{gen_id}]: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail={"success": False, "error": "UNKNOWN_FLOW_ERROR", "message": str(e)}
+            )
+
+@router.get("/download/{generation_id}.zip")
+async def download_zip(generation_id: str):
+    """Downloads all generated image assets as a zip file."""
+    gen_dir = settings.output_path / generation_id
+    if not gen_dir.exists():
+        raise HTTPException(status_code=404, detail="Generation output not found.")
+        
+    zip_path = settings.output_path / f"{generation_id}.zip"
+    if not zip_path.exists():
+        shutil.make_archive(str(settings.output_path / generation_id), "zip", gen_dir)
+        
+    return FileResponse(
+        path=zip_path,
+        filename=f"FlowBot_{generation_id}.zip",
+        media_type="application/zip"
+    )
+
+@router.post("/auth/upload-session")
+async def upload_session(file: UploadFile = File(...)):
+    """Uploads and unpacks authenticated Google session tar.gz into Railway volume."""
+    try:
+        await session_manager.close_context()
+        temp_tar = settings.BASE_DIR / "temp_session.tar.gz"
+        with open(temp_tar, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+            
+        settings.profile_path.mkdir(parents=True, exist_ok=True)
+        shutil.unpack_archive(str(temp_tar), str(settings.profile_path), "gztar")
+        temp_tar.unlink(missing_ok=True)
+        
+        email = GoogleFlowAdapter.get_logged_in_email()
+        logger.info(f"Google Flow Session unpacked successfully on Railway. User: {email}")
+        return {"success": True, "message": "Google Session Synced successfully!", "user_email": email}
+    except Exception as e:
+        logger.error(f"Failed to unpack session: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
