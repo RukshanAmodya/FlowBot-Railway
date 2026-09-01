@@ -113,15 +113,17 @@ class FlowGeneratorService:
         logger.info(f"Starting generation flow for ID: {generation_id}")
 
         try:
+            self.page.set_default_timeout(60000)
             if "labs.google/fx/tools/flow" not in self.page.url:
                 logger.info(f"Navigating to {settings.FLOW_URL}...")
                 try:
-                    await self.page.goto(settings.FLOW_URL, wait_until="domcontentloaded", timeout=60000)
+                    await self.page.goto(settings.FLOW_URL, wait_until="commit", timeout=60000)
                 except Exception as e:
                     logger.info(f"Initial navigation notice ({e}); waiting for dom ready...")
                 await self.page.wait_for_timeout(4000)
             else:
                 logger.info(f"Reusing existing open Flow page: {self.page.url}")
+
 
 
 
