@@ -135,6 +135,7 @@ class FlowGeneratorService:
 
             # Step 1: Open project workspace directly
             await self.adapter.open_project_or_new()
+            await self.capture_diagnostic_snapshot(f"{generation_id}_step1_workspace_open")
 
             # Step 2: Directly upload the reference image
             if reference_image_base64 or reference_image_url:
@@ -154,17 +155,21 @@ class FlowGeneratorService:
                             ref_path.write_bytes(resp.content)
                             await self.adapter.upload_reference_image(ref_path)
 
+                await self.capture_diagnostic_snapshot(f"{generation_id}_step2_ref_image_opened")
+
                 # Step 3: Inside opened reference image view, switch Model from Pro to Nano Banana 2 & 1 image
                 logger.info("Inside reference image view: Switching Model to Nano Banana 2...")
                 await self.adapter.switch_model_and_settings_in_view(model_name="Nano Banana 2", count=count)
-
+                await self.capture_diagnostic_snapshot(f"{generation_id}_step3_model_nano_banana_2")
 
             existing_images = await self.get_existing_image_ids()
             logger.info(f"Found {len(existing_images)} baseline images in workspace.")
 
-            # Step 5: Type prompt directly into the open reference image edit view
+            # Step 4: Type prompt directly into the open reference image edit view
             await self.adapter.insert_prompt(prompt)
+            await self.capture_diagnostic_snapshot(f"{generation_id}_step4_prompt_injected")
             await self.adapter.click_generate()
+
 
 
             new_image_elements = await self.wait_for_generation_complete(

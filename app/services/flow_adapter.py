@@ -324,16 +324,15 @@ class GoogleFlowAdapter:
             # 4. Click the newly uploaded image at the very first position (top/leftmost item on workspace)
             logger.info("Clicking the newly uploaded reference image card to enter image edit view...")
             
-            # Target the uploaded image card directly
+            # Target the uploaded image card directly inside the grid scroller ONLY (strictly exclude header / avatars / buttons)
             image_card_selectors = [
                 "div[data-testid='virtuoso-item-list'] div[role='img']",
                 "div[data-testid='virtuoso-item-list'] img",
+                "div[data-testid='virtuoso-scroller'] div[role='img']",
+                "div[data-testid='virtuoso-scroller'] img",
                 "div.sc-888a6226-1 img",
-                "main div[role='img']",
-                "main img:not([alt*='Avatar'])",
-                "img[src*='media.getMediaUrlRedirect']",
-                "img[src*='blob:']",
-                "div[role='img']"
+                "div[role='grid'] div[role='row'] img",
+                "div[role='grid'] div[role='gridcell'] img"
             ]
 
             card_clicked = False
@@ -341,20 +340,20 @@ class GoogleFlowAdapter:
                 cards = self.page.locator(c_sel)
                 if await cards.count() > 0:
                     first_card = cards.first
-                    if await first_card.is_visible(timeout=1000):
+                    if await first_card.is_visible(timeout=1500):
                         logger.info(f"Clicking reference image using selector: {c_sel}")
                         await first_card.click(force=True)
                         card_clicked = True
                         break
 
             if not card_clicked:
-                # Click coordinates of first grid item
-                grid_scroller = self.page.locator("div[data-testid='virtuoso-scroller']").first
-                if await grid_scroller.is_visible(timeout=1000):
-                    await grid_scroller.click(position={"x": 150, "y": 150})
+                logger.info("Clicking coordinates (200, 200) inside workspace scroller...")
+                grid_scroller = self.page.locator("div[data-testid='virtuoso-scroller'], main").first
+                if await grid_scroller.is_visible(timeout=1500):
+                    await grid_scroller.click(position={"x": 200, "y": 200})
 
             # Verify transition to image edit view (/edit/ or edit prompt bar)
-            for _ in range(15):
+            for _ in range(20):
                 if "/edit/" in self.page.url:
                     self.current_edit_url = self.page.url
                     logger.info(f"Successfully entered image edit view: {self.current_edit_url}")
@@ -362,6 +361,7 @@ class GoogleFlowAdapter:
                 await self.page.wait_for_timeout(400)
 
             await self.page.wait_for_timeout(1000)
+
 
         except Exception as e:
             logger.warning(f"Reference image upload workflow notice: {e}")

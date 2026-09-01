@@ -31,6 +31,16 @@ def get_static_logged_in_email() -> Optional[str]:
         pass
     return None
 
+@router.get("/screenshots")
+async def list_screenshots():
+    """Lists all captured diagnostic and step screenshots."""
+    files = list(settings.screenshot_path.glob("*.png"))
+    files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
+    return {
+        "count": len(files),
+        "screenshots": [f"/screenshots/{f.name}" for f in files[:20]]
+    }
+
 @router.get("/status", response_model=StatusResponse)
 async def get_status():
     """Checks authentication status and readiness."""
@@ -42,6 +52,7 @@ async def get_status():
         authenticated=auth_state,
         user_email=user_email
     )
+
 
 
 @router.post("/generate", response_model=GenerateResponse)
