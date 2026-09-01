@@ -32,13 +32,15 @@ class Settings(BaseSettings):
     API_KEY: str = ""
 
     # Storage Paths
-    BASE_DIR: str = "."
     OUTPUT_DIR: str = "./generated"
     TEMP_DIR: str = "./temp"
     SCREENSHOT_DIR: str = "./screenshots"
     LOG_DIR: str = "./logs"
     LOG_LEVEL: str = "INFO"
 
+    @property
+    def base_path(self) -> Path:
+        return Path(__file__).resolve().parent.parent
 
     @property
     def profile_path(self) -> Path:
@@ -70,15 +72,8 @@ class Settings(BaseSettings):
         p.mkdir(parents=True, exist_ok=True)
         return p
 
-    @property
-    def BASE_DIR(self) -> Path:
-        return Path(__file__).resolve().parent.parent
-
-    @property
-    def base_path(self) -> Path:
-        return Path(__file__).resolve().parent.parent
-
 
 settings = Settings()
+
 
 
