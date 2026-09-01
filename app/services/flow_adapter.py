@@ -451,9 +451,9 @@ class GoogleFlowAdapter:
 
     async def click_generate(self) -> None:
         """Triggers the generation action (arrow button or Enter)."""
-        logger.info("Locating Generate / Arrow button...")
+        logger.info("Locating Generate / Arrow button or pressing Enter...")
 
-        # Dismiss "OK, got it" Cookie Banner if covering bottom prompt bar
+        # 1. Dismiss "OK, got it" Cookie Banner if covering bottom prompt bar
         try:
             cookie_btn = self.page.locator("button:has-text('OK, got it'), button:has-text('Accept all')").first
             if await cookie_btn.is_visible(timeout=800):
@@ -463,6 +463,12 @@ class GoogleFlowAdapter:
         except Exception:
             pass
 
+        # 2. Press Enter inside active focused textbox
+        logger.info("Submitting prompt via Enter key...")
+        await self.page.keyboard.press("Enter")
+        await self.page.wait_for_timeout(1000)
+
+        # 3. Also look for any visible arrow/generate button
         gen_btn_selectors = [
             "button:has(i:has-text('arrow_forward'))",
             "button:has(i:has-text('send'))",
@@ -476,7 +482,7 @@ class GoogleFlowAdapter:
         
         for g_sel in gen_btn_selectors:
             btn = self.page.locator(g_sel).last
-            if await btn.is_visible(timeout=1500):
+            if await btn.is_visible(timeout=800):
                 try:
                     await btn.click()
                     logger.info(f"Generation triggered via button ({g_sel}).")
@@ -485,9 +491,6 @@ class GoogleFlowAdapter:
                 except Exception:
                     pass
 
-        logger.info("Falling back to pressing Enter in the prompt editor...")
-        await self.page.keyboard.press("Enter")
-        await self.page.wait_for_timeout(1000)
 
 
 

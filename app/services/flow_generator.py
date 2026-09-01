@@ -169,6 +169,9 @@ class FlowGeneratorService:
             await self.adapter.insert_prompt(prompt)
             await self.capture_diagnostic_snapshot(f"{generation_id}_step4_prompt_injected")
             await self.adapter.click_generate()
+            await self.page.wait_for_timeout(3000)
+            await self.capture_diagnostic_snapshot(f"{generation_id}_step5_generating")
+
 
 
 
