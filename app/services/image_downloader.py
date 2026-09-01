@@ -12,12 +12,16 @@ class ImageDownloader:
         self.output_base_dir = output_base_dir
         self.timeout_seconds = timeout_seconds
 
+    async def download_generated_images(self, page: Page, image_locators: List[Locator], generation_id: str) -> List[Path]:
+        return await self.download_image_elements(page, image_locators, generation_id)
+
     async def download_image_elements(
         self,
         page: Page,
         image_locators: List[Locator],
         generation_id: str
     ) -> List[Path]:
+
         """Downloads the 4 image files directly to the generation directory."""
         gen_dir = self.output_base_dir / generation_id
         gen_dir.mkdir(parents=True, exist_ok=True)
@@ -106,10 +110,11 @@ class ImageDownloader:
 
 
 
-        if len(saved_paths) != 4:
+        if not saved_paths:
             raise FlowAutomationException(
                 "IMAGE_DOWNLOAD_FAILED",
-                f"Expected 4 downloaded image assets, but only successfully downloaded {len(saved_paths)}."
+                f"Expected downloaded image assets, but successfully downloaded {len(saved_paths)}."
             )
 
         return saved_paths
+
