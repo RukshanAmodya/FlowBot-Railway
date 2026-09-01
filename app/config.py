@@ -1,7 +1,8 @@
 """Configuration module for FlowBot application."""
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 
 class Settings(BaseSettings):
