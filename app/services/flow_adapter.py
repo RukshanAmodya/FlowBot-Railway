@@ -94,23 +94,22 @@ class GoogleFlowAdapter:
         """Ensures the designated project workspace is open directly without creating new ones."""
         logger.info("Checking project workspace...")
         
+        clean_url = settings.FLOW_URL.split("#")[0]
+        if "/project/" not in self.page.url:
+            logger.info(f"Navigating directly to Google Flow: {clean_url}...")
+            try:
+                await self.page.goto(clean_url, wait_until="commit", timeout=30000)
+            except Exception as e:
+                logger.info(f"Navigation notice: {e}")
+            await self.page.wait_for_timeout(3000)
+
         # Check if landed on Google Flow promotional landing page with 'Create with Google Flow' button
-        create_flow_btn = self.page.locator("button:has-text('Create with Google Flow'), button:has-text('Try in Google Flow')").first
-        if await create_flow_btn.is_visible(timeout=2000):
+        create_flow_btn = self.page.locator("button:has-text('Create with Google Flow'), button:has-text('Try in Google Flow'), button:has-text('Get started')").first
+        if await create_flow_btn.is_visible(timeout=3000):
             logger.info("Found landing page entry button. Entering workspace...")
             await create_flow_btn.click()
             await self.page.wait_for_timeout(3000)
 
-        clean_url = settings.FLOW_URL.split("#")[0]
-        if "/project/" not in self.page.url:
-            logger.info(f"Navigating directly to project workspace: {clean_url}...")
-            await self.page.goto(clean_url, wait_until="domcontentloaded", timeout=45000)
-            await self.page.wait_for_timeout(3000)
-
-        # Check again if still on landing page
-        if await create_flow_btn.is_visible(timeout=1000):
-            await create_flow_btn.click()
-            await self.page.wait_for_timeout(3000)
 
         new_proj_btn = await self.find_element(sel.NEW_PROJECT_SELECTORS, timeout_ms=2000)
         if new_proj_btn and "/project/" not in self.page.url:
