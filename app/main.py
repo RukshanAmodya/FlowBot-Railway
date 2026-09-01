@@ -1,4 +1,4 @@
-﻿"""FastAPI application entrypoint for FlowBot-Railway."""
+"""FastAPI application entrypoint for FlowBot-Railway."""
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -14,8 +14,12 @@ async def lifespan(app: FastAPI):
     settings.screenshot_path.mkdir(parents=True, exist_ok=True)
     yield
     from app.services.session_manager import session_manager
-    await session_manager.close_context()
+    try:
+        await session_manager.close()
+    except Exception:
+        pass
     logger.info("FlowBot-Railway Service stopped.")
+
 
 app = FastAPI(
     title="FlowBot-Railway API",
