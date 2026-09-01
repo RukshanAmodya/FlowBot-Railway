@@ -1,4 +1,4 @@
-﻿FROM mcr.microsoft.com/playwright/python:v1.42.0-jammy
+FROM mcr.microsoft.com/playwright/python:v1.42.0-jammy
 
 WORKDIR /app
 
@@ -21,8 +21,9 @@ COPY . .
 # Create essential runtime directories
 RUN mkdir -p /app/browser_profile /app/generated /app/logs /app/screenshots
 
-# Expose Railway assigned port
+# Expose default port
 EXPOSE 8000
 
-# Start FastAPI application using dynamic port
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Start FastAPI application using dynamic Railway PORT
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+
