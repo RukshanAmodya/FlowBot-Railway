@@ -28,12 +28,22 @@ class BrowserSessionManager:
         if storage_state_arg:
             logger.info(f"Using cross-platform storage state from: {state_file}")
 
+        proxy_config = None
+        if settings.PROXY_SERVER:
+            proxy_config = {"server": settings.PROXY_SERVER}
+            if settings.PROXY_USERNAME:
+                proxy_config["username"] = settings.PROXY_USERNAME
+            if settings.PROXY_PASSWORD:
+                proxy_config["password"] = settings.PROXY_PASSWORD
+            logger.info(f"Configured Playwright proxy: {settings.PROXY_SERVER}")
+
         self._context = await self._playwright.chromium.launch_persistent_context(
             user_data_dir=str(settings.profile_path),
             headless=settings.HEADLESS,
             slow_mo=50 if settings.HEADLESS else 100,
             viewport=None if not settings.HEADLESS else {"width": 1920, "height": 1080},
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            proxy=proxy_config,
             args=[
                 "--start-maximized",
                 "--disable-blink-features=AutomationControlled",
@@ -43,6 +53,7 @@ class BrowserSessionManager:
                 "--disable-setuid-sandbox"
             ]
         )
+
 
         # Inject storage_state cookies & storage if state.json is uploaded
         if state_file.exists():
