@@ -90,10 +90,17 @@ async def generate_images(req: GenerateRequest):
             )
         except Exception as e:
             logger.error(f"Unexpected error in generation [{gen_id}]: {e}")
+            current_url = "unknown"
+            try:
+                current_url = page.url
+                await page.screenshot(path=str(settings.screenshot_path / f"railway_err_{gen_id}.png"))
+            except Exception:
+                pass
             raise HTTPException(
                 status_code=500,
-                detail={"success": False, "error": "UNKNOWN_FLOW_ERROR", "message": str(e)}
+                detail={"success": False, "error": "UNKNOWN_FLOW_ERROR", "message": f"{str(e)} on URL: {current_url}"}
             )
+
 
 @router.get("/download/{generation_id}.zip")
 async def download_zip(generation_id: str):

@@ -40,6 +40,8 @@ app.include_router(api_router)
 
 # Mount generated images statically
 app.mount("/generated", StaticFiles(directory=str(settings.output_path)), name="generated")
+app.mount("/screenshots", StaticFiles(directory=str(settings.screenshot_path)), name="screenshots")
+
 
 @app.get("/")
 async def root():
