@@ -12,14 +12,10 @@ class Settings(BaseSettings):
         extra="ignore"
     )
 
-    # Google Flow Settings
-    FLOW_URL: str = "https://labs.google/fx/tools/flow"
-    FLOW_MODEL: str = "NANO_BANANA_2"
-
-
-    IMAGE_COUNT: int = 4
-    ASPECT_RATIO: str = "16:9"
-    OUTPUT_STRATEGY: Literal["single_request", "multiple_requests"] = "single_request"
+    # Gemini Studio Settings
+    STUDIO_URL: str = "https://gemini.google.com/share/fed2e5f4f4c3?skid=4bd31dae-312d-41d0-96e6-fb0b519ae1c4"
+    IMAGE_COUNT: int = 1
+    ASPECT_RATIO: str = "9:16"
 
     # Browser Automation Settings
     BROWSER_PROFILE_DIR: str = "./browser_profile"
@@ -28,6 +24,7 @@ class Settings(BaseSettings):
     PROXY_SERVER: Optional[str] = "http://31.59.20.176:6754"
     PROXY_USERNAME: Optional[str] = "pgyojheu"
     PROXY_PASSWORD: Optional[str] = "i1z3l2l2mh56"
+
 
 
     GENERATION_TIMEOUT_SECONDS: int = 300

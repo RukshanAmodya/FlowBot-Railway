@@ -10,9 +10,10 @@ from fastapi.responses import FileResponse, JSONResponse
 from app.config import settings
 from app.models import GenerateRequest, GenerateResponse, StatusResponse
 from app.services.session_manager import session_manager
-from app.services.flow_generator import FlowGeneratorService
-from app.services.flow_adapter import GoogleFlowAdapter, FlowAutomationException
+from app.services.studio_generator import StudioGeneratorService
+from app.services.gemini_studio_adapter import StudioAutomationException
 from app.utils.logger import logger
+
 
 router = APIRouter(prefix="/api/v1", tags=["FlowBot-Railway"])
 generation_lock = asyncio.Lock()
@@ -70,13 +71,11 @@ async def generate_images(req: GenerateRequest):
         
         try:
             page = await session_manager.get_or_create_context()
-            generator = FlowGeneratorService(page)
+            generator = StudioGeneratorService(page)
             
             image_paths = await generator.execute_generation(
                 prompt=req.prompt,
                 generation_id=gen_id,
-                count=req.count,
-                aspect_ratio=req.aspect_ratio,
                 reference_image_base64=req.reference_image_base64,
                 reference_image_url=req.reference_image_url
             )
@@ -93,11 +92,11 @@ async def generate_images(req: GenerateRequest):
                 zip_download_url=f"/api/v1/download/{gen_id}.zip"
             )
             
-        except FlowAutomationException as fae:
-            logger.error(f"FlowAutomationException in generation [{gen_id}]: {fae.error_code} - {fae.message}")
+        except StudioAutomationException as sae:
+            logger.error(f"StudioAutomationException in generation [{gen_id}]: {sae.error_code} - {sae.message}")
             raise HTTPException(
                 status_code=500,
-                detail={"success": False, "error": fae.error_code, "message": fae.message, "details": fae.details}
+                detail={"success": False, "error": sae.error_code, "message": sae.message, "details": sae.details}
             )
         except Exception as e:
             logger.error(f"Unexpected error in generation [{gen_id}]: {e}")
@@ -109,8 +108,9 @@ async def generate_images(req: GenerateRequest):
                 pass
             raise HTTPException(
                 status_code=500,
-                detail={"success": False, "error": "UNKNOWN_FLOW_ERROR", "message": f"{str(e)} on URL: {current_url}"}
+                detail={"success": False, "error": "UNKNOWN_STUDIO_ERROR", "message": f"{str(e)} on URL: {current_url}"}
             )
+
 
 
 @router.get("/download/{generation_id}.zip")
